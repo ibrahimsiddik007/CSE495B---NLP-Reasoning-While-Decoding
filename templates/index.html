@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>decoding strategis comparison</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Decoding Strategies Comparison For Text Generation</h1>
+            <p class="subtitle">Model : Qwen2.5 - 0.5B - Instruct</p>
+        </header>
+
+        <div class="input-section">
+            <div class="prompt-container">
+                <label for="prompt">Enter your prompt:</label>
+                <textarea id="prompt" rows="3" placeholder="Enter partial prompt."></textarea>
+            </div>
+            
+            <div class="controls">
+                <div class="slider-container">
+                    <label for="maxLength">Max Length: <span id="maxLengthValue">100</span></label>
+                    <input type="range" id="maxLength" min="50" max="200" value="100">
+                </div>
+                
+                <button id="generateBtn" class="generate-btn">Generate Text</button>
+                <button id="toggleParams" class="toggle-params-btn">Tune Parameters</button>
+            </div>
+        </div>
+
+        <!-- Parameter Tuning Section -->
+        <div id="paramSection" class="param-section" style="display: none;">
+            <div class="param-header">
+                <h3>Tune Generation Parameters</h3>
+                <button id="resetParams" class="reset-btn">Reset to Defaults</button>
+            </div>
+            
+            <div class="param-grid">
+                <!-- Greedy Parameters -->
+                <div class="param-card greedy-card">
+                    <h4>Greedy Decoding</h4>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            No Repeat N-gram: <span id="greedyNgramValue">2</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Prevents repetition of n-grams. If set to 2, no 2-word sequence can appear twice. Higher values reduce repetition but may limit natural flow.</span>
+                        </label>
+                        <input type="range" id="greedyNgram" min="0" max="5" value="2">
+                    </div>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Repetition Penalty: <span id="greedyRepValue">1.2</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Penalizes tokens that have already appeared. Values > 1.0 discourage repetition. Higher values create more diverse but potentially less coherent text.</span>
+                        </label>
+                        <input type="range" id="greedyRep" min="1.0" max="2.0" step="0.1" value="1.2">
+                    </div>
+                </div>
+
+                <!-- Beam Search Parameters -->
+                <div class="param-card beam-card">
+                    <h4>Beam Search</h4>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Num Beams: <span id="beamNumValue">5</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Number of parallel sequences to track. More beams = better quality but slower. Typical values: 3-10.</span>
+                        </label>
+                        <input type="range" id="beamNum" min="2" max="10" value="5">
+                    </div>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            No Repeat N-gram: <span id="beamNgramValue">3</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Prevents repetition of n-grams across beams. Set to 3 means no 3-word phrase repeats. Improves diversity.</span>
+                        </label>
+                        <input type="range" id="beamNgram" min="0" max="5" value="3">
+                    </div>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Length Penalty: <span id="beamLenValue">1.0</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Controls output length preference. > 1.0 favors longer sequences, < 1.0 favors shorter ones. 1.0 is neutral.</span>
+                        </label>
+                        <input type="range" id="beamLen" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+
+                <!-- Top-K Parameters -->
+                <div class="param-card topk-card">
+                    <h4>Top-K Sampling</h4>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Top K: <span id="topkValue">50</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Only sample from the K most likely tokens. Lower K = more focused, higher K = more diverse. Typical: 40-80.</span>
+                        </label>
+                        <input type="range" id="topkVal" min="10" max="100" step="10" value="50">
+                    </div>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Temperature: <span id="topkTempValue">1.0</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Randomness control. Higher = more creative/random, lower = more conservative/predictable. 1.0 is standard, 0.7 = focused, 1.5 = creative.</span>
+                        </label>
+                        <input type="range" id="topkTemp" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+
+                <!-- Top-P Parameters -->
+                <div class="param-card topp-card">
+                    <h4>Top-P (Nucleus)</h4>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Top P: <span id="toppValue">0.9</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Samples from smallest set of tokens whose cumulative probability exceeds P. Lower = more focused, higher = more diverse. 0.9 is common.</span>
+                        </label>
+                        <input type="range" id="toppVal" min="0.5" max="1.0" step="0.05" value="0.9">
+                    </div>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Temperature: <span id="toppTempValue">1.0</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Randomness control. Higher = more creative/random, lower = more conservative/predictable. 1.0 is standard, 0.7 = focused, 1.5 = creative.</span>
+                        </label>
+                        <input type="range" id="toppTemp" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+
+                <!-- Temperature-based Sampling Parameters -->
+                <div class="param-card temperature-card">
+                    <h4>Temperature-based Sampling</h4>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Temperature: <span id="temperatureTempValue">0.9</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Randomness control. Higher = more creative/random, lower = more conservative/predictable. This strategy uses slightly lower temp for balance.</span>
+                        </label>
+                        <input type="range" id="temperatureTemp" min="0.5" max="2.0" step="0.1" value="0.9">
+                    </div>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Top P: <span id="temperaturePValue">0.9</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Nucleus sampling threshold. Samples from tokens comprising top 90% probability mass. Balances quality and creativity.</span>
+                        </label>
+                        <input type="range" id="temperatureP" min="0.5" max="1.0" step="0.05" value="0.9">
+                    </div>
+                    <div class="param-control">
+                        <label class="tooltip">
+                            Top K: <span id="temperatureKValue">50</span>
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltiptext">Limits vocabulary to top K tokens per step. Combined with top-p for hybrid sampling that's both focused and creative.</span>
+                        </label>
+                        <input type="range" id="temperatureK" min="10" max="100" step="10" value="50">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="loading-container">
+                <h3 id="progressTitle">Generating Text...</h3>
+                <p id="progressStatus">Initializing generation process</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <p class="progress-percentage" id="progressPercentage">0%</p>
+            </div>
+        </div>
+
+        <div id="results" class="results-grid" style="display: none;">
+            <!-- Greedy -->
+            <div class="result-card greedy-card">
+                <h3><span class="strategy-badge greedy-badge">1</span> Greedy Decoding</h3>
+                <div class="generated-text" id="greedy-text"></div>
+                <div class="metrics" id="greedy-metrics"></div>
+            </div>
+
+            <!-- Beam Search -->
+            <div class="result-card beam-card">
+                <h3><span class="strategy-badge beam-badge">2</span> Beam Search</h3>
+                <div class="generated-text" id="beam_search-text"></div>
+                <div class="metrics" id="beam_search-metrics"></div>
+            </div>
+
+            <!-- Top-K -->
+            <div class="result-card topk-card">
+                <h3><span class="strategy-badge topk-badge">3</span> Top-K Sampling</h3>
+                <div class="generated-text" id="top_k-text"></div>
+                <div class="metrics" id="top_k-metrics"></div>
+            </div>
+
+            <!-- Top-P -->
+            <div class="result-card topp-card">
+                <h3><span class="strategy-badge topp-badge">4</span> Top-P (Nucleus)</h3>
+                <div class="generated-text" id="top_p-text"></div>
+                <div class="metrics" id="top_p-metrics"></div>
+            </div>
+
+            <!-- Temperature-based Sampling -->
+            <div class="result-card temperature-card">
+                <h3><span class="strategy-badge temperature-badge">5</span> Temperature-based Sampling</h3>
+                <div class="generated-text" id="temperature-text"></div>
+                <div class="metrics" id="temperature-metrics"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
