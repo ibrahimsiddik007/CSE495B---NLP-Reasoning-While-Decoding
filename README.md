@@ -9,7 +9,7 @@
 **Course:** CSE495B: Natural Language Processing  
 **Instructor:** Dr. Mohammad Ashrafuzzaman Khan [AzK]  
 **Department:** Computer Science and Engineering
-
+**Authors:** MD. Ibrahim Siddik, Fuad Al Mamun
 ---
 
 ## 📝 Project Overview
