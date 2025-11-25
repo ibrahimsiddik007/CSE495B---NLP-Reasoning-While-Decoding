@@ -60,7 +60,3 @@ To select the most probable correct answer from the sampled list.
     * Jupyter (Microsoft)
     * *Optional:* Pylance
 
-### Dependencies
-*(List your specific libraries here, e.g., OpenAI, Transformers, Torch)*
-```bash
-pip install -r requirements.txt
